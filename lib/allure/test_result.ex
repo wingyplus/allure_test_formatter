@@ -39,11 +39,12 @@ defmodule Allure.TestResult.Label do
 end
 
 defimpl JSON.Encoder, for: Allure.TestResult.Label do
-  def encode(value, _opts) do
+  def encode(value, encoder) do
     %{
       "name" => value.name,
       "value" => value.value
     }
+    |> encoder.(encoder)
   end
 end
 
@@ -173,7 +174,7 @@ defmodule Allure.TestResult.Step do
 end
 
 defimpl JSON.Encoder, for: Allure.TestResult.Step do
-  def encode(value, _opts) do
+  def encode(value, encoder) do
     %{
       "name" => value.name,
       "status" => value.status,
@@ -191,6 +192,7 @@ defimpl JSON.Encoder, for: Allure.TestResult.Step do
     }
     |> Enum.reject(fn {_k, v} -> is_nil(v) end)
     |> Map.new()
+    |> encoder.(encoder)
   end
 end
 
@@ -220,7 +222,7 @@ defmodule Allure.TestResult do
           steps: [Allure.TestResult.Step.t()] | nil
         }
 
-  @enforce_keys [:uuid, :name, :status]
+  @enforce_keys [:uuid, :name]
   defstruct [
     :uuid,
     :history_id,
@@ -238,12 +240,12 @@ defmodule Allure.TestResult do
     :labels,
     :parameters,
     :attachments,
-    :steps
+    steps: []
   ]
 end
 
 defimpl JSON.Encoder, for: Allure.TestResult do
-  def encode(value, _opts) do
+  def encode(value, encoder) do
     %{
       "uuid" => value.uuid,
       "historyId" => value.history_id,
@@ -265,5 +267,6 @@ defimpl JSON.Encoder, for: Allure.TestResult do
     }
     |> Enum.reject(fn {_k, v} -> is_nil(v) end)
     |> Map.new()
+    |> encoder.(encoder)
   end
 end
