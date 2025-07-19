@@ -14,12 +14,13 @@ defmodule Allure.TestResult.Link do
 end
 
 defimpl JSON.Encoder, for: Allure.TestResult.Link do
-  def encode(value, _opts) do
+  def encode(value, encoder) do
     %{
       "name" => value.name,
       "url" => value.url,
       "type" => value.type
     }
+    |> encoder.(encoder)
   end
 end
 
@@ -65,7 +66,7 @@ defmodule Allure.TestResult.Parameter do
 end
 
 defimpl JSON.Encoder, for: Allure.TestResult.Parameter do
-  def encode(value, _opts) do
+  def encode(value, encoder) do
     %{
       "name" => value.name,
       "value" => value.value,
@@ -74,6 +75,7 @@ defimpl JSON.Encoder, for: Allure.TestResult.Parameter do
     }
     |> Enum.reject(fn {_k, v} -> is_nil(v) end)
     |> Map.new()
+    |> encoder.(encoder)
   end
 end
 
@@ -94,12 +96,13 @@ defmodule Allure.TestResult.Attachment do
 end
 
 defimpl JSON.Encoder, for: Allure.TestResult.Attachment do
-  def encode(value, _opts) do
+  def encode(value, encoder) do
     %{
       "name" => value.name,
       "source" => value.source,
       "type" => value.type
     }
+    |> encoder.(encoder)
   end
 end
 
@@ -120,7 +123,7 @@ defmodule Allure.TestResult.StatusDetails do
 end
 
 defimpl JSON.Encoder, for: Allure.TestResult.StatusDetails do
-  def encode(value, _opts) do
+  def encode(value, encoder) do
     %{
       "known" => value.known,
       "muted" => value.muted,
@@ -130,6 +133,7 @@ defimpl JSON.Encoder, for: Allure.TestResult.StatusDetails do
     }
     |> Enum.reject(fn {_k, v} -> is_nil(v) end)
     |> Map.new()
+    |> encoder.(encoder)
   end
 end
 
