@@ -7,7 +7,11 @@ defmodule AllureTestFormatter.MixProject do
       version: "0.1.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      description: description(),
+      package: package(),
+      name: "Allure Test Formatter",
+      source_url: source_url()
     ]
   end
 
@@ -22,7 +26,22 @@ defmodule AllureTestFormatter.MixProject do
   defp deps do
     [
       {:uuidv7, "~> 1.0"},
-      {:igniter, "~> 0.6", only: [:dev, :test]}
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+    ]
+  end
+
+  defp description do
+    "Allure test report for ExUnit"
+  end
+
+  defp source_url do
+    "https://github.com/wingyplus/allure_test_formatter"
+  end
+
+  defp package() do
+    [
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => source_url()}
     ]
   end
 end
