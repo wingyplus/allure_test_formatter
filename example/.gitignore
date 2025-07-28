@@ -17,12 +17,7 @@ erl_crash.dump
 *.ez
 
 # Ignore package tarball (built via "mix hex.build").
-allure_test_formatter-*.tar
+example-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
-.lexical
-
-# Allure output files
-allure-report
-allure-results

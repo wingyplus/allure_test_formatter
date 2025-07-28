@@ -8,26 +8,22 @@ defmodule AllureTestFormatter do
 
   use GenServer
 
-  @doc """
-  Initializes the formatter with the given ExUnit configuration.
-  """
   def init(opts) do
-    File.mkdir_p!("allure-results")
+    test_results = "allure-results"
+    File.rm_rf(test_results)
+    File.mkdir_p!(test_results)
 
     # Store configuration and initialize state
     state = %{
       config: opts,
       test_results: [],
-      test_directory: "allure-results",
+      test_directory: test_results,
       current_test_result: nil
     }
 
     {:ok, state}
   end
 
-  @doc """
-  Handles ExUnit formatter events as GenServer casts.
-  """
   def handle_cast({:suite_started, _opts}, state) do
     {:noreply, state}
   end
@@ -82,12 +78,15 @@ defmodule AllureTestFormatter do
   end
 
   def handle_cast({:test_finished, test}, state) do
+    {status, details} = test_status(test)
+
     new_state =
       update_in(state, [:test_results], fn test_results ->
         [
           %Allure.TestResult{
             state.current_test_result
-            | status: test_status(test),
+            | status: status,
+              status_details: details,
               stop:
                 state.current_test_result.start +
                   System.convert_time_unit(test.time, :microsecond, :millisecond)
@@ -100,28 +99,36 @@ defmodule AllureTestFormatter do
     {:noreply, new_state}
   end
 
-  def handle_cast({:sigquit, _tests_or_modules}, state) do
-    # The VM is shutting down with tests still running
-    # tests_or_modules is a list of ExUnit.Test or ExUnit.TestModule
-    {:noreply, state}
+  def handle_cast(_, state), do: {:noreply, state}
+
+  defp test_status(%ExUnit.Test{state: nil}), do: {"passed", nil}
+
+  defp test_status(%ExUnit.Test{state: {:failed, errors}}) do
+    {message, trace} =
+      Enum.reduce(errors, {[], []}, fn {_, reason, stacktrace}, {message, trace} ->
+        {[Exception.message(reason) | message], [Exception.format_stacktrace(stacktrace) | trace]}
+      end)
+
+    string = fn iodata ->
+      Enum.intersperse(iodata, "\n\n") |> IO.iodata_to_binary() |> String.trim()
+    end
+
+    {"failed",
+     %Allure.TestResult.StatusDetails{
+       message: string.(message),
+       trace: string.(trace)
+     }}
   end
 
-  def handle_cast(:max_failures_reached, state) do
-    # Test run aborted due to max failures limit
-    {:noreply, state}
+  defp test_status(%ExUnit.Test{state: {:skipped, message}}) do
+    {"skipped", %Allure.TestResult.StatusDetails{message: message}}
   end
 
-  # Deprecated: ignore this event
-  def handle_cast({:case_started, _test_module}, state) do
-    {:noreply, state}
+  defp test_status(%ExUnit.Test{state: {:excluded, message}}) do
+    {"skipped", %Allure.TestResult.StatusDetails{message: message}}
   end
 
-  # Deprecated: ignore this event
-  def handle_cast({:case_finished, _test_module}, state) do
-    {:noreply, state}
-  end
-
-  defp test_status(%ExUnit.Test{state: {:failed, _}}), do: :failed
+  defp test_status(%ExUnit.Test{state: {:invalid, _}}), do: {"unknown", nil}
 
   defp hash(%ExUnit.Test{name: name, module: module}) do
     :crypto.hash(:sha256, "#{module}-#{name}") |> Base.encode64()
